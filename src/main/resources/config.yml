@@ -38,11 +38,11 @@ offer-generation:
     # The vanilla default is 1.
     new-offer-count: 1
     
-    # The number of ticks, after the trading GUI is closed, before an offer is generated. Vanilla default is 60.
+    # The number of ticks, after the trading GUI is closed, before an offer is generated. Vanilla default is 40.
     # Note: this property and 'offer-removal.removal-ticks' effectively override each other: offers are generated and
     # removed simultaneously, and the last action (causing removal or causing generation) determines the actual number
     # of ticks before *both* removal and generation occur.
-    generation-ticks: 60
+    generation-ticks: 40
     
     # If set to true, allows new offers to be generated after any trade. By default, new offers are only generated
     # after a trade with the final offer slot - hence the vanilla default is false. Note that, if you are setting
