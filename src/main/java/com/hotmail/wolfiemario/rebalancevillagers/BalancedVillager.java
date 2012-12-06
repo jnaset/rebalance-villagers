@@ -58,7 +58,7 @@ public class BalancedVillager extends EntityVillager
     {
         super(world, k);
         
-        profession = 0;
+        randomTickDivider = 0;
         f = false;
         g = false;
         village = null;
@@ -98,93 +98,92 @@ public class BalancedVillager extends EntityVillager
     @SuppressWarnings("unchecked")
     protected void bm()
     {
-        if(--profession <= 0)     //standard behavior
-        {
-            world.villages.a(MathHelper.floor(locX), MathHelper.floor(locY), MathHelper.floor(locZ));
-            profession = 70 + random.nextInt(50);
-            village = world.villages.getClosestVillage(MathHelper.floor(locX), MathHelper.floor(locY), MathHelper.floor(locZ), 32);
-            if(village == null)
-            {
-                aL(); //detatchHome
-            } else
-            {
-                ChunkCoordinates chunkcoordinates = village.getCenter();
-                b(chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z, (int)((float)village.getSize() * 0.6F));
-                if(bL)
-                {
-                    bL = false;
-                    village.b(5);
-                }
-            }
-        }
-        
-        if(!p() && j > 0) // trading related behavior - p == isTrading, j == timeUntilReset
-        {
-            j--;
-            if(j <= 0) // timeUntilReset
-            {
-                if(bI) // bI == needsInitilization - were we adding a new offer?
-                {
-                    if(village != null && bK != null)
-                    {
-                        world.broadcastEntityEffect(this, (byte)14);
-                        village.a(bK, 1);
-                    }
-                    generateNewOffers(newOfferCount); //Add new offer(s)
-                    
-                    if(i.size() > 1)
-                    {
-                        ArrayList<MerchantRecipe> toRemove = null;
-                        Iterator<?> iterator = i.iterator();
-                        do
-                        {
-                            if(!iterator.hasNext()) break;
-                            MerchantRecipe merchantrecipe = (MerchantRecipe)iterator.next();
-                            if(merchantrecipe.g())  // if uses exceeded maxUses 
-                            {
-                                if (offerRemoval)
-                                {
-                                    if (toRemove == null) toRemove = new ArrayList<MerchantRecipe>();
-                                    toRemove.add(merchantrecipe);
-                                }
-                                else
-                                {
-                                    // reset maxUses so item is usable again
-                                    merchantrecipe.a(maxUses(random));
-                                }
-                            }
-                        } while(true);
-                        
-                        if (toRemove != null) {
-                            // if we would remove all of our recipes, reactivate at least the first one!
-                            if (toRemove.size() >= i.size()) {
-                                boolean firstOne = true;
-                                for (MerchantRecipe merchantrecipe : toRemove) {
-                                    if (firstOne) {
-                                        System.out.println("Reactivate first one...");
-                                        merchantrecipe.a(maxUses(random));
-                                        firstOne = false;
-                                    } else {
-                                        i.remove(merchantrecipe);
-                                    }
-                                }
-                            } else {
-                                i.removeAll(toRemove);
-                            }
-                        }
+    	if(--randomTickDivider <= 0)     //standard behavior
+    	{
+    		world.villages.a(MathHelper.floor(locX), MathHelper.floor(locY), MathHelper.floor(locZ));
+    		randomTickDivider = 70 + random.nextInt(50);
+    		village = world.villages.getClosestVillage(MathHelper.floor(locX), MathHelper.floor(locY), MathHelper.floor(locZ), 32);
+    		if(village == null)
+    		{
+    			aL(); //detatchHome
+    		} else
+    		{
+    			ChunkCoordinates chunkcoordinates = village.getCenter();
+    			b(chunkcoordinates.x, chunkcoordinates.y, chunkcoordinates.z, (int)((float)village.getSize() * 0.6F));
+    			if(bL)  // resetPlayerReputations_flag -- true if converted from zombie
+    			{
+    				bL = false;
+    				village.b(5);  // resetPlayerReputations
+    			}
+    		}
+    	}
 
-                    }
-                    
-                    bI = false;
-                }
-                addEffect(new MobEffect(MobEffectList.REGENERATION.id, particleTicks, 0));  // addEffect(new MobEffect(MobEffectList.REGENERATION.id, 200, 0));
-            }
-        }
-        
-        // if we still have no active offer, activate at least one offer so we don't run dry...
-        checkForInactiveOffersOnly(false);
+    	if(!p() && j > 0) // trading related behavior - p == isTrading, j == timeUntilReset
+    	{
+    		j--;
+    		if(j <= 0) // timeUntilReset
+    		{
+    			if(bI) // bI == needsInitilization - were we adding a new offer?
+    			{
+    				if(village != null && bK != null)
+    				{
+    					world.broadcastEntityEffect(this, (byte)14);
+    					village.a(bK, 1);  // setReputationForPlayer(lastBuyingPlayer, 1)
+    				}
+    				generateNewOffers(newOfferCount); //Add new offer(s)
 
-        super.bm();
+    				bI = false;
+    				addEffect(new MobEffect(MobEffectList.REGENERATION.id, particleTicks, 0));  // addEffect(new MobEffect(MobEffectList.REGENERATION.id, 200, 0));
+    			}
+
+    			if(i.size() > 1)
+    			{
+    				ArrayList<MerchantRecipe> toRemove = null;
+    				Iterator<?> iterator = i.iterator();
+    				do
+    				{
+    					if(!iterator.hasNext()) break;
+    					MerchantRecipe merchantrecipe = (MerchantRecipe)iterator.next();
+    					if(merchantrecipe.g())  // if uses exceeded maxUses 
+    					{
+    						if (offerRemoval)
+    						{
+    							if (toRemove == null) toRemove = new ArrayList<MerchantRecipe>();
+    							toRemove.add(merchantrecipe);
+    						}
+    						else
+    						{
+    							// reset maxUses so item is usable again
+    							do {
+    								merchantrecipe.a(maxUses(random));
+    							} while (merchantrecipe.g());
+    						}
+    					}
+    				} while(true);
+
+    				if (toRemove != null) {
+    					// if we would remove all of our recipes, reactivate at least the first one!
+    					if (toRemove.size() >= i.size()) {
+    						boolean firstOne = true;
+    						for (MerchantRecipe merchantrecipe : toRemove) {
+    							if (firstOne) {
+    								merchantrecipe.a(maxUses(random));
+    								firstOne = false;
+    							} else {
+    								i.remove(merchantrecipe);
+    							}
+    						}
+    					} else {
+    						i.removeAll(toRemove);
+    					}
+    				}
+
+    			}
+    		}
+    	}
+
+    	// if we still have no active offer, activate at least one offer so we don't run dry...
+    	checkForInactiveOffersOnly(false);
     }
     
     
@@ -402,15 +401,15 @@ public class BalancedVillager extends EntityVillager
         merchantrecipe.f(); //increments offer uses
         if( (merchantrecipe.a( (MerchantRecipe)i.get(i.size() - 1) ) || newForAnyTrade) && (random.nextInt(100) < newProbability) ) //Does this offer equal the last offer on the list?
         {
-            j = generationTicks; //set offer update ticks to n
-            bI = true;
+            bI = true; // needsInitialization
             if(h != null)
-                bK = h.getName();
+                bK = h.getName();  // set last buying player's name
             else
                 bK = null;
         }
         if(merchantrecipe.getBuyItem1().id == currencyId)
             bJ += merchantrecipe.getBuyItem1().count; //increment riches by amount of currency item.
+        if ((j <= 0) || (j > generationTicks)) j = generationTicks;  //set offer update ticks to n
     }
     
     /**
@@ -564,7 +563,7 @@ public class BalancedVillager extends EntityVillager
         return compressedForms.containsKey(id);
     }
     
-    private int profession;
+    private int randomTickDivider;
     private boolean f;
     private boolean g;
     Village village;
@@ -647,7 +646,7 @@ public class BalancedVillager extends EntityVillager
     }
     
 
-    public static void setCheckDryDrun(int count)           {   dryrunCheckTicks = count;  }
+    public static void setCheckDryRun(int count)            {   dryrunCheckTicks = count;  }
 
     public static void setDefaultOfferCount(int count)      {   defaultOfferCount = count;  }
     public static void setNewOfferCount(int count)          {   newOfferCount = count;      }
